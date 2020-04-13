@@ -41,5 +41,30 @@ function startGame(){
 }
 
 function turnClick(cell){
-    console.log(cell.target.id);
+    move(cell.target.id, human_player); //only human player can "click
+}
+
+function move(cellId, player){
+    original_brd[cellId] = player;
+    //if human_player return O
+    //else return X
+    document.getElementById(cellId).innerText = player;//display move
+    let won = checkWon(original_brd, player);
+    if(won) gameOver(won);
+}
+
+function checkWon(board, player){
+    //find every cell which had been filled by the player
+    //going through all cells
+	let plays = board.reduce((return_val, element, index) => 
+        (element === player) ? return_val.concat(index) : return_val, []);
+    //console.log(plays);
+    let gameWon = null;
+	for (let [index, win] of win_scenario.entries()) {
+		if (win.every(elem => plays.indexOf(elem) > -1)) {
+			gameWon = {index: index, player: player};
+			break;
+		}
+	}
+	return gameWon;
 }

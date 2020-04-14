@@ -41,7 +41,15 @@ function startGame(){
 }
 
 function turnClick(cell){
-    move(cell.target.id, human_player); //only human player can "click
+    //if the cell is not filled
+    //every cell is marked 0->8
+    //if cell is fill, it should be O or X
+    if(typeof original_brd[cell.target.id] == 'number'){
+        move(cell.target.id, human_player); 
+        if(!checkTie()) //check if all cells is filled, but no winner found
+            move(bestSpot(), ai_player);
+    }
+    
 }
 
 function move(cellId, player){
@@ -68,3 +76,109 @@ function checkWon(board, player){
 	}
 	return gameWon;
 }
+
+function gameOver(gameWon){
+    //checking if the move is in the winning scenario or not
+    for(let index of win_scenario[gameWon.index]){
+        document.getElementById(index).style.backgroundColor = 
+            gameWon.player == human_player ? "lightblue": "red";
+    }
+    //locking all the remaining cells, game already over here :) 
+    for(let i = 0; i< cells.length; i++)
+        cells[i].removeEventListener('click', turnClick, false);
+    printWinner(gameWon.player == human_player ? "You won" : "You lost");
+}
+
+function emptyCells(){
+    //looping through the board, see if there's any empty cell to return
+    return original_brd.filter(cell => typeof cell == 'number');
+}
+
+function bestSpot(){
+    return minimax(original_brd, ai_player).index;
+}
+
+function printWinner(player){
+    document.querySelector(".endgame").style.display = "block";
+    document.querySelector(".endgame .text").innerText = player;
+}
+
+function checkTie(){
+    if(emptyCells().length == 0){
+        for(let i = 0; i < cells.length; i++){
+            cells[i].style.backgroundColor = "green"; //fill all cells green
+            cells[i].removeEventListener('click', turnClick, false); //lock all remaning cells
+        }
+        printWinner("Tie");
+        return true;
+    }
+    return false;
+}
+
+function minimax(newBoard, player) {
+	var availableSpots = emptyCells();
+
+	if (checkWon(newBoard, human_player)) {
+		return {score: -10};
+	} else if (checkWon(newBoard, ai_player)) {
+		return {score: 10};
+	} else if (availableSpots.length === 0) {
+		return {score: 0};
+	}
+    var arrMoves = [];
+    //calling itself at every empty cell
+	for (var i = 0; i < availableSpots.length; i++) {
+        var move = {};
+        //assigning index number of current empty spot to get its score
+        move.index = newBoard[availableSpots[i]];
+        
+        //assigning O or X to new board
+		newBoard[availableSpots[i]] = player;
+
+        //going deeper into the tree if not found terminal state
+		if (player == ai_player) {
+			var result = minimax(newBoard, human_player);
+			move.score = result.score;
+		} else {
+			var result = minimax(newBoard, ai_player);
+			move.score = result.score;
+		}
+
+        //reset value
+		newBoard[availableSpots[i]] = move.index;
+
+		arrMoves.push(move);
+	}
+
+	var bestMove;
+	if(player === ai_player) {
+        //ai - highest score
+		var bestScore = -99999;
+		for(var i = 0; i < arrMoves.length; i++) {
+            //which ever moves with score higher that best score is saved
+			if (arrMoves[i].score > bestScore) {
+				bestScore = arrMoves[i].score;
+				bestMove = i;
+			}
+		}
+	} else {
+        //human - lowest score
+		var bestScore = 99999;
+		for(var i = 0; i < arrMoves.length; i++) {
+			if (arrMoves[i].score < bestScore) {
+				bestScore = arrMoves[i].score;
+				bestMove = i;
+			}
+		}
+	}
+
+	return arrMoves[bestMove];
+}
+
+
+
+
+
+
+
+
